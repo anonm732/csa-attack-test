@@ -43,8 +43,6 @@ struct Dot11BeaconHdr : public Dot11MgmtHdr {
 
     // Extended CSA (0x3C)
     struct Dot11ExtCsa : Tag {
-        uint8_t id;     // 0x3C (60)
-        uint8_t len;    // 0x04
         uint8_t mode;   
         uint8_t op_cl;  // New Operating Class
         uint8_t ch;     // New Channel Number

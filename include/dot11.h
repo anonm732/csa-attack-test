@@ -22,29 +22,35 @@ struct Dot11MgmtHdr {
     uint16_t seq;
 };
 
-struct Dot11BeaconFixed {
-    uint64_t ts;    // Timestamp
-    uint16_t in;    // Interval
-    uint16_t ca;    // Capability
-};
+struct Dot11BeaconHdr : public Dot11MgmtHdr {
+    struct Fix {
+        uint64_t ts;    // Timestamp
+        uint16_t in;    // Interval
+        uint16_t ca;    // Capability
+    } fix_;
 
-// CSA (0x25)
-struct Dot11Csa {
-    uint8_t id;     // 0x25 (37)
-    uint8_t len;    // 0x03
-    uint8_t mode;
-    uint8_t ch;     // New Channel Number
-    uint8_t count;
-};
+    struct Tag {
+        uint8_t num;
+        uint8_t len;
+    };
 
-// Extended CSA (0x3C)
-struct Dot11ExtCsa {
-    uint8_t id;     // 0x3C (60)
-    uint8_t len;    // 0x04
-    uint8_t mode;   
-    uint8_t op_cl;  // New Operating Class
-    uint8_t ch;     // New Channel Number
-    uint8_t count;
+    // CSA (0x25)
+    struct Dot11Csa : Tag {
+        uint8_t mode;
+        uint8_t ch;     // New Channel Number
+        uint8_t count;
+    } csa_;
+
+    // Extended CSA (0x3C)
+    struct Dot11ExtCsa : Tag {
+        uint8_t id;     // 0x3C (60)
+        uint8_t len;    // 0x04
+        uint8_t mode;   
+        uint8_t op_cl;  // New Operating Class
+        uint8_t ch;     // New Channel Number
+        uint8_t count;
+    } extCsa_;
 };
+typedef Dot11BeaconHdr* PDot11BeaconHdr;
 
 #pragma pack(pop)

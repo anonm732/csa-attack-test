@@ -38,9 +38,13 @@ std::string Mac::toString() const {
     return std::string(buf);
 }
 
-bool Mac::operator < (const Mac& r) const {
-    return memcmp(m_, r.m_, sizeof(m_)) < 0;
-}
+Mac& Mac::operator =  (const Mac& r) { if (this != &r) memcpy(m_, r.m_, sizeof(m_)); return *this; }
+bool Mac::operator == (const Mac& r) const { return memcmp(m_, r.m_, sizeof(m_)) == 0; }
+bool Mac::operator != (const Mac& r) const { return !(*this == r); }
+bool Mac::operator <  (const Mac& r) const { return memcmp(m_, r.m_, sizeof(m_)) < 0; }
+bool Mac::operator >  (const Mac& r) const { return r < &this; }
+bool Mac::operator <= (const Mac& r) const { return !(r < *this); }
+bool Mac::operator >= (const Mac& r) const { return !(*this < r); }
 
 Mac& Mac::broadcastMac() {
     static uint8_t byte[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};

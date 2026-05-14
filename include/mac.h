@@ -13,7 +13,13 @@ struct Mac {
 
     std::string toString() const;
 
-    bool operator < (const Mac& r) const;
+    Mac& operator =  (const Mac& r);            // assign
+    bool operator == (const Mac& r) const;      // comparison
+    bool operator != (const Mac& r) const;      // .
+    bool operator <  (const Mac& r) const;      // .
+    bool operator >  (const Mac& r) const;      // .
+    bool operator <= (const Mac& r) const;      // .
+    bool operator >= (const Mac& r) const;      // .
 
     static Mac& broadcastMac();
     static Mac& nullMac();

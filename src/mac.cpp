@@ -42,7 +42,7 @@ Mac& Mac::operator =  (const Mac& r) { if (this != &r) memcpy(m_, r.m_, sizeof(m
 bool Mac::operator == (const Mac& r) const { return memcmp(m_, r.m_, sizeof(m_)) == 0; }
 bool Mac::operator != (const Mac& r) const { return !(*this == r); }
 bool Mac::operator <  (const Mac& r) const { return memcmp(m_, r.m_, sizeof(m_)) < 0; }
-bool Mac::operator >  (const Mac& r) const { return r < &this; }
+bool Mac::operator >  (const Mac& r) const { return r < *this; }
 bool Mac::operator <= (const Mac& r) const { return !(r < *this); }
 bool Mac::operator >= (const Mac& r) const { return !(*this < r); }
 

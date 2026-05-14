@@ -10,6 +10,7 @@ pkg_check_modules(PCAP REQUIRED libpcap)
 add_executable(csa-attack-test
     src/csa-attack-test.cpp
     src/mac.cpp
+    src/dot11.cpp
     src/util.cpp
     src/pch.cpp
     libyeob/src/radiotap.cpp

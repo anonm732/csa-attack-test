@@ -3,7 +3,7 @@
 
 void printhex(const void* data, size_t len) {
     const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data);
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         printf("%02X ", bytes[i]);
         if ((i + 1) % 16 == 0) printf("\n");
     }

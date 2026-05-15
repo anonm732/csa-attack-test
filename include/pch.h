@@ -3,6 +3,7 @@
 #include <cstdlib>      // stdlib
 #include <cstring>      // strcmp etc.
 #include <string>       // std::stdring
+#include <vector>
 #include <sys/types.h>
 #include <pcap.h>
 #include <map>

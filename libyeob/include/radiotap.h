@@ -61,7 +61,7 @@ struct RadioTapHdr {
 
     uint8_t  version_;
     uint8_t  pad_;
-    uint16_t len_; 
+    uint16_t len_;
     Present present_; // init
 
     void init();

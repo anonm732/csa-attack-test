@@ -22,7 +22,6 @@ int main(int argc, char* argv[]) {
 
     param.dev_          = argv[1];
     param.apMac_        = Mac(argv[2]);
-    param.chOffset_     = (uint8_t)atoi(argv[3]);
 
     // if stMac exists :
     if (argc >= 5) param.stMac_ = Mac(argv[4]);

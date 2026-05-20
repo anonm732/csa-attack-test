@@ -107,6 +107,8 @@ int main(int argc, char* argv[]) {
             );
         }
         printf("[TEST] done : %d beacon processed\n", cnt);
+    } else {
+        csaPkt.attack();
     }
 
 

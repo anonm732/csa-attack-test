@@ -64,6 +64,21 @@ int main(int argc, char* argv[]) {
         struct pcap_pkthdr* hdr;
         const u_char* raw;
         while (pcap_next_ex(pcap, &hdr, &raw) > 0) {
+            bool hasCsa = false;
+            bool hasExtCsa = false;
+            {
+                uint16_t origRtLen = ((PRadioTapHdr)raw)->get_len();
+                if (hdr->caplen >= origRtLen + sizeof(Dot11BeaconHdr)) {
+                    PDot11BeaconHdr origBeacon = (PDot11BeaconHdr)(raw + origRtLen);
+                    const uint8_t* origEnd = raw + hdr->caplen;
+                    if (((PRadioTapHdr)raw)->has_fcs()) origEnd -= 4;
+                    for (PDot11Tag t = origBeacon->firstTag(); t->isValid(origEnd); t = t->next()) {
+                        if (t->num_ == TP_CSA) hasCsa = true;
+                        if (t->num_ == TP_EXT_CSA) hasExtCsa = true;
+                    }
+                }
+            }
+
             std::vector<uint8_t> newPkt = csaPkt.processBeacon(raw, hdr->caplen);
             if (newPkt.empty()) continue;
 
@@ -71,17 +86,23 @@ int main(int argc, char* argv[]) {
             PDot11BeaconHdr beacon = (PDot11BeaconHdr)(newPkt.data() + rtLen);
             const uint8_t* end = newPkt.data() + newPkt.size(); // ~.data() is pointer -> skip by size
 
-            bool hasCsa = false;
-            bool hasExtCsa = false;
+            int csaCnt = 0, extCsaCnt = 0;
+            uint8_t csaCh = 0, extCsaCh = 0;
             for (PDot11Tag tag = beacon->firstTag(); tag->isValid(end); tag = tag->next()) {
-                if (tag->num_ == TP_CSA) hasCsa = true;
-                if (tag->num_ == TP_EXT_CSA) hasExtCsa = true;
+                if (tag->num_ == TP_CSA) {
+                    csaCnt++;
+                    csaCh = ((PDot11Csa)tag)->ch_;
+                }
+                if (tag->num_ == TP_EXT_CSA) {
+                    extCsaCnt++;
+                    extCsaCh = ((PDot11ExtCsa)tag)->num_;
+                }
             }
 
-            printf("\n[%d] beacon processed :\nCSA:%s\nExtCSA:%s\naddr1:%s\n",
+            printf("\n[%d] beacon processed :\nCSA:%s - ch:%u / x%d\nExtCSA:%s - ch:%u / x%d\naddr1:%s\n",
                             ++cnt, 
-                            hasCsa ? "OK" : "MISSING", 
-                            hasExtCsa ? "OK" : "MISSING", 
+                            hasCsa ? "REPLACED" : "INJECTED", csaCh, csaCnt,
+                            hasExtCsa ? "REPLACED" : "INJECTED", extCsaCh, extCsaCnt,
                             beacon->addr1_.toString().c_str()
             );
         }

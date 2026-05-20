@@ -1,6 +1,10 @@
+#include "dot11.h"
 #include "pch.h"
 #include "mac.h"
+#include "csa.h"
+#include "radiotap.h"
 #include "util.h"
+#include <cstdint>
 
 struct Param {
     char*   dev_        = nullptr;
@@ -52,6 +56,38 @@ int main(int argc, char* argv[]) {
 
     printf("AP MAC : %s\n", param.apMac_.toString().c_str());
     printf("Target : %s\n\n", target.toString().c_str());
+
+    CsaPkt csaPkt(pcap, param.apMac_, target);
+
+    if (testPcap) {     // TEST MODE
+        int cnt = 0;
+        struct pcap_pkthdr* hdr;
+        const u_char* raw;
+        while (pcap_next_ex(pcap, &hdr, &raw) > 0) {
+            std::vector<uint8_t> newPkt = csaPkt.processBeacon(raw, hdr->caplen);
+            if (newPkt.empty()) continue;
+
+            uint16_t rtLen = ((PRadioTapHdr)newPkt.data())->get_len();
+            PDot11BeaconHdr beacon = (PDot11BeaconHdr)(newPkt.data() + rtLen);
+            const uint8_t* end = newPkt.data() + newPkt.size(); // ~.data() is pointer -> skip by size
+
+            bool hasCsa = false;
+            bool hasExtCsa = false;
+            for (PDot11Tag tag = beacon->firstTag(); tag->isValid(end); tag = tag->next()) {
+                if (tag->num_ == TP_CSA) hasCsa = true;
+                if (tag->num_ == TP_EXT_CSA) hasExtCsa = true;
+            }
+
+            printf("\n[%d] beacon processed :\nCSA:%s\nExtCSA:%s\naddr1:%s\n",
+                            ++cnt, 
+                            hasCsa ? "OK" : "MISSING", 
+                            hasExtCsa ? "OK" : "MISSING", 
+                            beacon->addr1_.toString().c_str()
+            );
+        }
+        printf("[TEST] done : %d beacon processed\n", cnt);
+    }
+
 
     pcap_close(pcap);
     return 0;

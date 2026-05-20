@@ -1,9 +1,4 @@
-#include "dot11.h"
 #include "pch.h"
-#include "radiotap.h"
-#include <cstdint>
-#include <cstdio>
-#include <pcap/pcap.h>
 #include "csa.h"
 
 CsaPkt::CsaPkt(pcap_t* pcap, const Mac& apMac, const Mac& stMac)
@@ -82,7 +77,7 @@ std::vector<uint8_t> CsaPkt::buildModifiedBeacon(const uint8_t* pkt, uint32_t ca
 
 std::vector<uint8_t> CsaPkt::processBeacon(const uint8_t* pkt, uint32_t capLen) {
     if (capLen < sizeof(RadioTapHdr)) return {};
-    RadioTapHdr* rthdr = (RadioTapHdr*)pkt;
+    PRadioTapHdr rthdr = (PRadioTapHdr)pkt;
     uint16_t rtLen = rthdr->get_len();
 
     if (capLen < rtLen + sizeof(Dot11BeaconHdr)) return {};

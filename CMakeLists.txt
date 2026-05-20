@@ -9,6 +9,7 @@ pkg_check_modules(PCAP REQUIRED libpcap)
 
 add_executable(csa-attack-test
     src/csa-attack-test.cpp
+    src/csa.cpp
     src/mac.cpp
     src/dot11.cpp
     src/util.cpp

@@ -52,7 +52,7 @@ std::vector<uint8_t> CsaPkt::buildTagsWithCsa(const uint8_t* tagsStart, const ui
 
     if (!csaInserted)
         tags.insert(tags.end(), (uint8_t*)&csa, (uint8_t*)&csa + sizeof(csa));
-    if (extCsaInserted)
+    if (!extCsaInserted)
         tags.insert(tags.end(), (uint8_t*)&extCsa, (uint8_t*)&extCsa + sizeof(extCsa));
 
     return tags;
@@ -117,6 +117,7 @@ void CsaPkt::attack() {
         std::vector<uint8_t> newPkt = processBeacon(raw, hdr->caplen);
         if (newPkt.empty()) continue;
 
+        printf("size : %lu\n", newPkt.size());
         if (pcap_inject(pcap_, newPkt.data(), newPkt.size()) < 0) {
             fprintf(stderr, "pcap_inject failed: %s\n", pcap_geterr(pcap_));
             break;

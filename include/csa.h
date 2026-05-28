@@ -28,5 +28,5 @@ private:
     std::vector<uint8_t> buildTagsWithCsa(const uint8_t* tagsStart, const uint8_t* tagsEnd, uint8_t targetCh);
 
     //
-    std::vector<uint8_t> buildModifiedBeacon(const uint8_t* pkt, uint32_t capLen, uint16_t rtLen, uint8_t targetCh);
+    std::vector<uint8_t> buildModifiedBeacon(const uint8_t* pkt, uint32_t capLen, uint8_t targetCh);
 };

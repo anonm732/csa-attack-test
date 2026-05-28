@@ -6,6 +6,7 @@
 #include <vector>
 #include <sys/types.h>
 #include <pcap.h>
+#include <unistd.h>
 #include <map>
 
 #include "radiotap.h"
